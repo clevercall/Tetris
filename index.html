@@ -3,11 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Tetris Versions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .version-link {
+            margin: 20px;
+            padding: 10px;
+            border: 1px solid black;
+            border-radius: 5px;
+            text-decoration: none;
+            color: black;
+        }
+        .version-link:hover {
+            background-color: lightgray;
+        }
+    </style>
 </head>
 <body>
-    <canvas id="game-board" width="200" height="400"></canvas>
-    <script src="script.js"></script>
+    <h1>Tetris Versions</h1>
+    <a href="version1.html" class="version-link">Version 1: Basic Tetris</a>
+    <a href="version2.html" class="version-link">Version 2: Tetris with Scorekeeping</a>
+    <a href="version3.html" class="version-link">Version 3: Tetris with Advanced Features</a>
+    <!-- Add more versions as needed -->
 </body>
 </html>

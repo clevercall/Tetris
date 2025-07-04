@@ -1,32 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris Versions</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
-        .version-link {
-            margin: 20px;
-            padding: 10px;
-            border: 1px solid black;
-            border-radius: 5px;
-            text-decoration: none;
-            color: black;
-        }
-        .version-link:hover {
-            background-color: lightgray;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shell Game - Egg Under Cups</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <h1>Tetris Versions</h1>
-    <a href="version1.html" class="version-link">Version 1: Basic Tetris</a>
-    <a href="version2.html" class="version-link">Version 2</a>
-    <a href="version3.html" class="version-link">Version 3</a>
-    <!-- Add more versions as needed -->
+  <div class="game-container">
+    <h1>Find the Egg!</h1>
+    <div class="cups">
+      <div class="cup" id="cup1"></div>
+      <div class="cup" id="cup2"></div>
+      <div class="cup" id="cup3"></div>
+    </div>
+    <button id="shuffleBtn">Shuffle</button>
+    <p id="result"></p>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>

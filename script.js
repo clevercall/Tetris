@@ -1,153 +1,136 @@
-const canvas = document.getElementById('game-board');
-const ctx = canvas.getContext('2d');
-const grid = 20;
-const boardWidth = 10;
-const boardHeight = 20;
-let board = Array(boardHeight).fill().map(() => Array(boardWidth).fill(0));
-let currentTetrimino = getRandomTetrimino();
-let score = 0;
+let eggPosition = null;
+let isShuffling = false;
 
-// Draw game board
-function drawBoard() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let y = 0; y < boardHeight; y++) {
-        for (let x = 0; x < boardWidth; x++) {
-            if (board[y][x] === 1) {
-                ctx.fillStyle = 'black';
-                ctx.fillRect(x * grid, y * grid, grid, grid);
-            }
-        }
-    }
+function shuffle() {
+  if (isShuffling) return;
+  isShuffling = true;
+
+  const resultEl = document.getElementById('result');
+  resultEl.textContent = "Placing egg...";
+
+  const cups = document.querySelectorAll('.cup');
+
+  // Remove existing egg visuals
+  const existingEgg = document.getElementById('egg');
+  if (existingEgg) existingEgg.remove();
+
+  // Randomly choose egg position
+  eggPosition = Math.floor(Math.random() * 3) + 1;
+  console.log("Egg is under cup", eggPosition);
+
+  // Place egg animation first
+  placeEggAnimation(eggPosition, () => {
+    // After egg placement, start real shuffle
+    resultEl.textContent = "Shuffling...";
+    startRealShuffle(cups, resultEl);
+  });
 }
 
-// Draw current Tetrimino
-function drawTetrimino() {
-    ctx.fillStyle = currentTetrimino.color;
-    for (let y = 0; y < currentTetrimino.shape.length; y++) {
-        for (let x = 0; x < currentTetrimino.shape[y].length; x++) {
-            if (currentTetrimino.shape[y][x] === 1) {
-                ctx.fillRect((currentTetrimino.x + x) * grid, (currentTetrimino.y + y) * grid, grid, grid);
-            }
-        }
-    }
+function placeEggAnimation(cupNumber, callback) {
+  const cup = document.getElementById(`cup${cupNumber}`);
+  const egg = document.createElement('div');
+  egg.id = "egg";
+  egg.className = "egg";
+  document.body.appendChild(egg);
+
+  const cupRect = cup.getBoundingClientRect();
+  egg.style.left = `${cupRect.left + cupRect.width/2 - 15}px`;
+  egg.style.top = `${cupRect.top - 30}px`;
+
+  // Animate egg down into cup
+  setTimeout(() => {
+    egg.style.top = `${cupRect.top + cupRect.height/2 - 15}px`;
+  }, 100);
+
+  // After animation ends, proceed to shuffle
+  setTimeout(() => {
+    egg.style.visibility = "hidden"; // hide egg before shuffling
+    callback();
+  }, 700);
 }
 
-// Get random Tetrimino
-function getRandomTetrimino() {
-    const tetriminos = [
-        { shape: [[1, 1, 1, 1]], color: 'blue', x: 3, y: 0 }, // I
-        { shape: [[1, 0, 0], [1, 1, 1]], color: 'orange', x: 3, y: 0 }, // J
-        { shape: [[0, 0, 1], [1, 1, 1]], color: 'green', x: 3, y: 0 }, // L
-        { shape: [[1, 1], [1, 1]], color: 'yellow', x: 4, y: 0 }, // O
-        { shape: [[0, 1, 1], [1, 1, 0]], color: 'red', x: 3, y: 0 }, // S
-        { shape: [[0, 1, 0], [1, 1, 1]], color: 'purple', x: 3, y: 0 }, // T
-        { shape: [[1, 1, 0], [0, 1, 1]], color: 'pink', x: 3, y: 0 }, // Z
-    ];
-    return tetriminos[Math.floor(Math.random() * tetriminos.length)];
+function startRealShuffle(cups, resultEl) {
+  let shuffleCount = 0;
+  const maxShuffles = 5; // fewer but realistic swaps
+
+  // Record initial positions
+  const positions = [];
+  cups.forEach(cup => {
+    const rect = cup.getBoundingClientRect();
+    positions.push(rect.left);
+  });
+
+  const shuffleInterval = setInterval(() => {
+    // Choose two random cups to swap
+    const i = Math.floor(Math.random() * cups.length);
+    let j = Math.floor(Math.random() * cups.length);
+    while (i === j) {
+      j = Math.floor(Math.random() * cups.length);
+    }
+
+    const cup1 = cups[i];
+    const cup2 = cups[j];
+
+    // Swap positions visually by changing their transform X based on difference
+    const cup1Rect = cup1.getBoundingClientRect();
+    const cup2Rect = cup2.getBoundingClientRect();
+    const dx = cup2Rect.left - cup1Rect.left;
+
+    cup1.style.transition = "transform 0.5s ease";
+    cup2.style.transition = "transform 0.5s ease";
+
+    cup1.style.transform = `translateX(${dx}px)`;
+    cup2.style.transform = `translateX(${-dx}px)`;
+
+    // After swap, reset transforms and swap their DOM positions for next swap
+    setTimeout(() => {
+      cup1.style.transition = "";
+      cup2.style.transition = "";
+      cup1.style.transform = "";
+      cup2.style.transform = "";
+
+      // Swap elements in the DOM for correct future swaps
+      const parent = cup1.parentNode;
+      if (cup1.nextSibling === cup2) {
+        parent.insertBefore(cup2, cup1);
+      } else {
+        parent.insertBefore(cup1, cup2);
+      }
+
+      shuffleCount++;
+      if (shuffleCount >= maxShuffles) {
+        clearInterval(shuffleInterval);
+        resultEl.textContent = "Shuffling done. Pick a cup!";
+        isShuffling = false;
+      }
+    }, 600);
+
+  }, 700);
 }
 
-// Move Tetrimino
-function moveTetrimino(dx, dy) {
-    currentTetrimino.x += dx;
-    currentTetrimino.y += dy;
-    if (checkCollision()) {
-        currentTetrimino.x -= dx;
-        currentTetrimino.y -= dy;
-        if (dy === 1) {
-            placeTetrimino();
-        }
-    }
+function checkCup(selectedCup) {
+  if (eggPosition === null) {
+    document.getElementById('result').textContent = "Please shuffle first!";
+    return;
+  }
+
+  const egg = document.getElementById('egg');
+  const selectedCupEl = document.getElementById(`cup${selectedCup}`);
+  const cupRect = selectedCupEl.getBoundingClientRect();
+
+  // Reveal egg only if selected cup is correct
+  if (selectedCup === eggPosition) {
+    egg.style.left = `${cupRect.left + cupRect.width/2 - 15}px`;
+    egg.style.top = `${cupRect.top + cupRect.height/2 - 15}px`;
+    egg.style.visibility = "visible";
+    document.getElementById('result').textContent = "🎉 You found the egg! You win!";
+  } else {
+    document.getElementById('result').textContent = "❌ Wrong cup. Try again!";
+  }
 }
 
-// Rotate Tetrimino
-function rotateTetrimino() {
-    const shape = currentTetrimino.shape;
-    currentTetrimino.shape = shape[0].map((val, index) => shape.map(row => row[index]).reverse());
-    if (checkCollision()) {
-        currentTetrimino.shape = shape;
-    }
-}
+document.getElementById('shuffleBtn').addEventListener('click', shuffle);
 
-// Check collision
-function checkCollision() {
-    for (let y = 0; y < currentTetrimino.shape.length; y++) {
-        for (let x = 0; x < currentTetrimino.shape[y].length; x++) {
-            if (currentTetrimino.shape[y][x] === 1) {
-                const boardX = currentTetrimino.x + x;
-                const boardY = currentTetrimino.y + y;
-                if (boardX < 0 || boardX >= boardWidth || boardY >= boardHeight) {
-                    return true;
-                }
-                if (boardY >= 0 && board[boardY][boardX] === 1) {
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
-
-// Place Tetrimino
-function placeTetrimino() {
-    for (let y = 0; y < currentTetrimino.shape.length; y++) {
-        for (let x = 0; x < currentTetrimino.shape[y].length; x++) {
-            if (currentTetrimino.shape[y][x] === 1) {
-                const boardX = currentTetrimino.x + x;
-                const boardY = currentTetrimino.y + y;
-                if (boardY >= 0) {
-                    board[boardY][boardX] = 1;
-                }
-            }
-        }
-    }
-    currentTetrimino = getRandomTetrimino();
-    checkLines();
-}
-
-// Check lines
-function checkLines() {
-    for (let y = 0; y < boardHeight; y++) {
-        let fullLine = true;
-        for (let x = 0; x < boardWidth; x++) {
-            if (board[y][x] === 0) {
-                fullLine = false;
-                break;
-            }
-        }
-        if (fullLine) {
-            board.splice(y, 1);
-            board.unshift(Array(boardWidth).fill(0));
-            score++;
-        }
-    }
-}
-
-// Main loop
-setInterval(() => {
-    moveTetrimino(0, 1);
-    drawBoard();
-    drawTetrimino();
-    ctx.fillStyle = 'black';
-    ctx.font = '24px Arial';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(`Score: ${score}`, 10, 10);
-}, 500);
-
-// Controls
-document.addEventListener('keydown', (e) => {
-    switch (e.key) {
-        case 'ArrowLeft':
-            moveTetrimino(-1, 0);
-            break;
-        case 'ArrowRight':
-            moveTetrimino(1, 0);
-            break;
-        case 'ArrowDown':
-            moveTetrimino(0, 1);
-            break;
-        case 'ArrowUp':
-            rotateTetrimino();
-            break;
-    }
-});
+document.getElementById('cup1').addEventListener('click', () => checkCup(1));
+document.getElementById('cup2').addEventListener('click', () => checkCup(2));
+document.getElementById('cup3').addEventListener('click', () => checkCup(3));
